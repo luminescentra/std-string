@@ -1,313 +1,333 @@
-#include <cstring>
 #include "cppstring.h"
+#include <cstring>
+#include <iostream>
 
-const size_t kInitialSize = 256;
-const int kIncreaseCoefficient = 2;
+String::String() {
+  string_ = nullptr;
+  size_ = 0;
+  capacity_ = 0;
+}
 
-// private methods
-
-std::size_t String::Strlen(const char *c_string) {
-    std::size_t size = 0;
-    while (c_string[size] != '\0') {
-        ++size;
+String::String(const size_t &size, const char &symbol) {
+  if (size != 0) {
+    string_ = new char[size];
+    size_ = size;
+    capacity_ = size_;
+    for (size_t i = 0; i < size_; i++) {
+      string_[i] = symbol;
     }
-    return size;
+  } else {
+    string_ = nullptr;
+    size_ = 0;
+    capacity_ = 0;
+  }
 }
 
-
-void String::Clear() {
-    m_length_ = 0;
+String::String(const String &other) {
+  if (other.capacity_ != 0) {
+    string_ = new char[other.capacity_];
+    size_ = other.size_;
+    capacity_ = other.capacity_;
+    strncpy(string_, other.string_, size_);
+  } else {
+    string_ = nullptr;
+    size_ = 0;
+    capacity_ = 0;
+  }
 }
 
-void String::PushBack(char c) {
-    if (m_length_ >= m_capacity_) {
-        IncreaseData();
-    }
-    m_data_[m_length_] = c;
-    ++m_length_;
+String::String(const char *string) {
+  size_ = strlen(string);
+  if (size_ == 0) {
+    string_ = nullptr;
+    capacity_ = 0;
+  } else {
+    string_ = new char[size_];
+    strncpy(string_, string, size_);
+    capacity_ = size_;
+  }
 }
 
-void String::IncreaseData() {
-    std::size_t new_cap = kIncreaseCoefficient * m_capacity_;
-    auto *new_data = new char[new_cap];
-    for (std::size_t i = 0; i < m_length_; ++i) {
-        new_data[i] = m_data_[i];
-    }
-    delete[] m_data_;
-    m_data_ = new_data;
-    m_capacity_ = new_cap;
-}
-
-// public methods
-
-String::String() : m_data_(new char[kInitialSize]), m_length_(0), m_capacity_(kInitialSize) {
-}
-
-String::String(char c) : String() {
-    m_data_[0] = c;
-    m_length_ = 1;
-}
-
-String::String(const char *c_string) {
-    std::size_t real_size = Strlen(c_string);
-    std::size_t size = std::max(kInitialSize, real_size);
-    m_data_ = new char[size];
-    m_length_ = real_size;
-    m_capacity_ = size;
-    for (std::size_t i = 0; i < m_length_; ++i) {
-        m_data_[i] = c_string[i];
-    }
-}
-
-String::String(const String &other) :
-m_data_(new char[other.m_capacity_]), m_length_(other.m_length_), m_capacity_(other.m_capacity_) {
-    for (std::size_t i = 0; i < m_length_; ++i) {
-        m_data_[i] = other.m_data_[i];
-    }
-}
-
-String::String(String &&other) :
-m_data_(other.m_data_), m_length_(other.m_length_), m_capacity_(other.m_capacity_) {
-    other.m_data_ = nullptr;
-    m_length_ = 0;
-    m_capacity_ = 256;
+String::String(const char *string, const size_t &size) {
+  size_ = size;
+  if (size == 0) {
+    string_ = nullptr;
+  } else {
+    auto *new_string = new char[size_];
+    string_ = new_string;
+    strncpy(string_, string, size);
+  }
+  capacity_ = size_;
 }
 
 String::~String() {
-    delete[] m_data_;
+  if (capacity_ != 0) {
+    delete[] string_;
+  }
 }
 
-void String::Swap(String &other) {
-    std::swap(m_data_, other.m_data_);
-    std::swap(m_length_, other.m_length_);
-    std::swap(m_capacity_, other.m_capacity_);
+char &String::operator[](const size_t &index) {
+  return string_[index];
 }
 
-std::size_t String::Length() const {
-    return m_length_;
+const char &String::operator[](const size_t &index) const {
+  return string_[index];
 }
 
-std::int64_t String::Index(char c) const {
-    for (std::size_t i = 0; i < m_length_; ++i) {
-        if (m_data_[i] == c) {
-            return static_cast<int64_t>(i);
-        }
-    }
-    return -1;
+char &String::At(const size_t &index) {
+  if (index >= size_) {
+    throw StringOutOfRange{};
+  }
+  return string_[index];
 }
 
-char String::operator[](std::size_t index) const {
-    return m_data_[index];
+const char &String::At(const size_t &index) const {
+  if (index >= size_) {
+    throw StringOutOfRange{};
+  }
+  return string_[index];
 }
 
-char &String::operator[](std::size_t index) {
-    return m_data_[index];
+char &String::Front() {
+  return string_[0];
 }
 
-void String::ToUpper(std::size_t first, std::size_t last) {
-    for (std::size_t i = first; i < last; ++i) {
-        if (std::islower(m_data_[i])) {
-            m_data_[i] = static_cast<char>(std::toupper(m_data_[i]));
-        }
-    }
+char &String::Back() {
+  return string_[size_ - 1];
 }
 
-void String::ToLower(std::size_t first, std::size_t last) {
-    for (std::size_t i = first; i < last; ++i) {
-        if (std::isupper(m_data_[i])) {
-            m_data_[i] = static_cast<char>(std::tolower(m_data_[i]));
-        }
-    }
+const char &String::Front() const {
+  return string_[0];
 }
 
-std::ostream &operator<<(std::ostream &stream, const String &string) {
-    for (size_t i = 0; i < string.Length(); ++i) {
-        stream << string[i];
-    }
-    return stream;
+const char &String::Back() const {
+  return string_[size_ - 1];
 }
 
-std::istream &operator>>(std::istream &stream, String &string) {
-    string.Clear();
-    char upcoming_char;
-    if (!(stream >> upcoming_char)) {
-        return stream;
-    }
-    do {
-        string.PushBack(upcoming_char);
-        upcoming_char = std::char_traits<char>::eof();
-        stream.get(upcoming_char);
-        if (isspace(upcoming_char)) {
-            stream.putback(upcoming_char);
-            break;
-        }
-    } while (upcoming_char != std::char_traits<char>::eof());
-    return stream;;
+const char *String::CStr() const {
+  return string_;
+}
+
+const char *String::Data() const {
+  return string_;
+}
+
+char *String::CStr() {
+  return string_;
+}
+
+char *String::Data() {
+  return string_;
+}
+
+bool String::Empty() const {
+  return size_ == 0;
+}
+
+const size_t &String::Size() const {
+  return size_;
+}
+
+const size_t &String::Length() const {
+  return size_;
+}
+
+const size_t &String::Capacity() const {
+  return capacity_;
+}
+
+void String::Clear() {
+  size_ = 0;
 }
 
 String &String::operator=(const String &other) {
-    if (&other == this) {
-        return *this;
+  if (this != &other) {
+    if (other.capacity_ == 0) {
+      if (capacity_ != 0) {
+        delete[] string_;
+      }
+      size_ = other.size_;
+      string_ = nullptr;
+      capacity_ = size_;
+    } else {
+      if (other.size_ > capacity_) {
+        delete[] string_;
+        string_ = new char[other.size_];
+        capacity_ = other.size_;
+      }
+      strncpy(string_, other.string_, other.size_);
+      size_ = other.size_;
     }
-    String(other).swap(*this);
-    return *this;
+  }
+  return *this;
 }
 
-String &String::operator=(String &&other) {
-    delete[] m_data_;
-    m_data_ = other.m_data_;
-    m_length_ = other.m_length_;
-    m_capacity_ = other.m_capacity_;
-    other.m_data_ = nullptr;
-    return *this;
+void String::Swap(String &other) {
+  String tmp;
+  tmp = *this;
+  *this = other;
+  other = tmp;
 }
 
-String &String::operator+=(const String &other) {
-    for (std::size_t i = 0; i < other.Length(); ++i) {
-        PushBack(other[i]);
+void String::PopBack() {
+  if (!Empty()) {
+    --size_;
+  }
+}
+
+void String::PushBack(const char &symbol) {
+  if (capacity_ == 0) {
+    string_ = new char[1];
+    string_[0] = symbol;
+    size_++;
+    capacity_++;
+  } else {
+    if (size_ >= capacity_) {
+      auto *buffer = new char[2 * size_];
+      strncpy(buffer, string_, size_);
+      delete[] string_;
+      string_ = buffer;
+      capacity_ = 2 * size_;
     }
-    return *this;
+    string_[size_] = symbol;
+    ++size_;
+  }
 }
 
-String operator+(const String &lhs, const String &rhs) {
-    String ans = lhs;
-    ans += rhs;
-    return ans;
+String &String::operator+=(const String &string) {
+  for (size_t i = 0; i < string.size_; i++) {
+    PushBack(string.string_[i]);
+  }
+  return *this;
 }
 
-bool operator==(const String &lhs, const String &rhs) {
-    if (lhs.Length() != rhs.Length()) {
-        return false;
+void String::Resize(const size_t &new_size, const char &symbol) {
+  size_t tmp = size_;
+  if (capacity_ == 0) {
+    string_ = new char[new_size];
+    capacity_ = new_size;
+  } else {
+    if (new_size > capacity_) {
+      auto *new_string = new char[new_size];
+      strncpy(new_string, string_, size_);
+      delete[] string_;
+      string_ = new_string;
+      capacity_ = new_size;
     }
-    for (std::size_t i = 0; i < lhs.Length(); ++i) {
-        if (lhs[i] != rhs[i]) {
-            return false;
-        }
+  }
+  size_ = new_size;
+  if (new_size > tmp) {
+    for (size_t i = 0; i < new_size - tmp; i++) {
+      string_[tmp + i] = symbol;
     }
-    return true;
+  }
 }
 
-bool operator==(const String &lhs, char rhs) {
-    return lhs == String(rhs);
+void String::Reserve(const size_t &new_capacity) {
+  if (capacity_ == 0) {
+    string_ = new char[new_capacity];
+    capacity_ = new_capacity;
+  } else if (new_capacity > capacity_) {
+    auto *new_string = new char[new_capacity];
+    strncpy(new_string, string_, size_);
+    delete[] string_;
+    string_ = new_string;
+    capacity_ = new_capacity;
+  }
 }
 
-bool operator==(const String &lhs, const char *rhs) {
-    return lhs == String(rhs);
+void String::ShrinkToFit() {
+  if (capacity_ != 0) {
+    auto *new_string = new char[size_];
+    strncpy(new_string, string_, size_);
+    delete[] string_;
+    string_ = new_string;
+    capacity_ = size_;
+  }
 }
 
-bool operator==(char lhs, const String &rhs) {
-    return String(lhs) == rhs;
-}
-
-bool operator==(const char *lhs, const String &rhs) {
-    return String(lhs) == rhs;
-}
-
-bool operator>(const String &lhs, const String &rhs) {
-    std::size_t min_size= std::min(lhs.Length(), rhs.Length());
-    for (std::size_t i = 0; i < min_size; ++i) {
-        if (lhs[i] > rhs[i]) {
-            return true;
-        } 
-        if (lhs[i] < rhs[i]) {
-            return false;
-        }
+bool String::operator>(const String &second) const {
+  for (size_t i = 0; i < std::min(size_, second.size_); i++) {
+    if (string_[i] == second.string_[i]) {
+      continue;
     }
-    return lhs.Length() > rhs.Length();
+    return string_[i] > second.string_[i];
+  }
+  return size_ > second.size_;
 }
 
-bool operator>(const String &lhs, char rhs) {
-    return lhs > String(rhs);
+bool String::operator<(const String &second) const {
+  for (size_t i = 0; i < std::min(size_, second.size_); i++) {
+    if (string_[i] == second.string_[i]) {
+      continue;
+    }
+    return string_[i] < second.string_[i];
+  }
+  return size_ < second.size_;
 }
 
-bool operator>(const String &lhs, const char *rhs) {
-    return lhs > String(rhs);
+bool String::operator>=(const String &second) const {
+  for (size_t i = 0; i < std::min(size_, second.size_); i++) {
+    if (string_[i] == second.string_[i]) {
+      continue;
+    }
+    return string_[i] > second.string_[i];
+  }
+  return size_ >= second.size_;
 }
 
-bool operator>(char lhs, const String &rhs) {
-    return String(lhs) > rhs;
+bool String::operator<=(const String &second) const {
+  for (size_t i = 0; i < std::min(size_, second.size_); i++) {
+    if (string_[i] == second.string_[i]) {
+      continue;
+    }
+    return string_[i] < second.string_[i];
+  }
+  return size_ <= second.size_;
 }
 
-bool operator>(const char *lhs, const String &rhs) {
-    return String(lhs) > rhs;
+bool String::operator==(const String &second) const {
+  if (size_ != second.size_) {
+    return false;
+  }
+  for (size_t i = 0; i < size_; i++) {
+    if (string_[i] == second.string_[i]) {
+      continue;
+    }
+    return false;
+  }
+  return true;
 }
 
-bool operator!=(const String &lhs, const String &rhs) {
-    return !(lhs == rhs);
+bool String::operator!=(const String &second) const {
+  return !(*this == second);
 }
 
-bool operator!=(const String &lhs, char rhs) {
-    return lhs != String(rhs);
+const String operator+(const String &first, const String &second) {
+  if (first.size_ + second.size_ == 0) {
+    return String("");
+  }
+  String obj;
+  auto *new_string = new char[first.size_ + second.size_];
+  if (second.size_ != 0 && first.size_ != 0) {
+    strncpy(new_string, first.string_, first.size_);
+    for (size_t i = first.size_; i < first.size_ + second.size_; i++) {
+      new_string[i] = second.string_[i - first.size_];
+    }
+  } else if (second.size_ == 0) {
+    strncpy(new_string, first.string_, first.size_);
+  } else {
+    strncpy(new_string, second.string_, second.size_);
+  }
+  obj.string_ = new_string;
+  obj.size_ = first.size_ + second.size_;
+  obj.capacity_ = obj.size_;
+  return String(obj);
 }
 
-bool operator!=(const String &lhs, const char *rhs) {
-    return lhs != String(rhs);
-}
-
-bool operator!=(char lhs, const String &rhs) {
-    return String(lhs) != rhs;
-}
-
-bool operator!=(const char *lhs, const String &rhs) {
-    return String(lhs) != rhs;
-}
-
-bool operator<(const String &lhs, const String &rhs) {
-    return rhs > lhs;
-}
-
-bool operator<(const String &lhs, char rhs) {
-    return lhs < String(rhs) ;
-}
-
-bool operator<(const String &lhs, const char *rhs) {
-    return lhs < String(rhs);
-}
-
-bool operator<(char lhs, const String &rhs) {
-    return String(lhs) < rhs;
-}
-
-bool operator<(const char *lhs, const String &rhs) {
-    return String(lhs) < rhs;
-}
-
-bool operator<=(const String &lhs, const String &rhs) {
-    return !(lhs > rhs);
-}
-
-bool operator<=(const String &lhs, char rhs) {
-    return lhs <= String(rhs);
-}
-
-bool operator<=(const String &lhs, const char *rhs) {
-    return lhs <= String(rhs);
-}
-
-bool operator<=(char lhs, const String &rhs) {
-    return String(lhs) <= rhs;
-}
-
-bool operator<=(const char *lhs, const String &rhs) {
-    return String(lhs) <= rhs;
-}
-
-bool operator>=(const String &lhs, const String &rhs) {
-    return !(lhs < rhs);
-}
-
-bool operator>=(const String &lhs, char rhs) {
-    return lhs >= String(rhs);
-}
-
-bool operator>=(const String &lhs, const char *rhs) {
-    return lhs >= String(rhs);
-}
-
-bool operator>=(char lhs, const String &rhs) {
-    return String(lhs) >= rhs;
-}
-
-bool operator>=(const char *lhs, const String &rhs) {
-    return String(lhs) >= rhs;
+std::ostream &operator<<(std::ostream &os, const String &second) {
+  for (size_t i = 0; i < second.size_; i++) {
+    os << second.string_[i];
+  }
+  return os;
 }
